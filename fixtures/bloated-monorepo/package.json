@@ -1,0 +1,22 @@
+{
+  "name": "acme-monorepo",
+  "private": true,
+  "packageManager": "pnpm@9.1.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "eslint": "^9.6.0",
+    "husky": "^9.0.11",
+    "tsx": "^4.16.0",
+    "turbo": "^2.0.4",
+    "typescript": "^5.5.2",
+    "vite": "^5.3.1",
+    "vitest": "^2.0.1"
+  }
+}

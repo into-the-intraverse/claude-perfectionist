@@ -1,0 +1,10 @@
+{
+  "name": "@acme/test-utils",
+  "private": true,
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  }
+}

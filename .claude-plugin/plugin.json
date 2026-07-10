@@ -1,5 +1,6 @@
 {
   "name": "claude-perfectionist",
+  "version": "0.2.0",
   "description": "Audit and optimize Claude Code instruction harnesses — CLAUDE.md, rules, hooks, skills, settings, MCP config. Produces graded reports with actionable findings.",
   "author": {
     "name": "intruder",

@@ -5,11 +5,15 @@
 ### Input
 A 210-line root CLAUDE.md with three review checklists, domain-specific sections for six services, external-only references (Notion, Slack, Confluence), routing to agents that don't exist, and LOC-based planning triggers. One `.claude/rules/frontend.md` exists with 2 lines. Package.json confirms pnpm + turbo + husky.
 
+Fixture: `fixtures/bloated-monorepo/`
+
 ### Output
 
 ```markdown
 # Verdict
 The root CLAUDE.md is a 210-line dumping ground. Three review checklists (~80 lines) and six domain-specific sections (~60 lines) consume always-on context that should be conditional. Five external-only references point to resources Claude cannot access. Fix the review-only misplacement and stale external references first.
+
+Grade: C — major cleanup needed
 
 ## Top findings
 | Severity | Problem | Why it matters | Action |
@@ -32,23 +36,20 @@ The root CLAUDE.md is a 210-line dumping ground. Three review checklists (~80 li
 - Are the subagents actually configured somewhere? If so, create .claude/agents/ definitions.
 ```
 
-### Why this is better than the old format
-- Leads with a verdict, not a taxonomy
-- Five findings max, strongly prioritized
-- Plain words ("review checklists in always-on memory") instead of class labels
-- One-screen report with no appendix needed
-- Open questions are only blockers
-
 ## Example 2: contradiction debug
 
 ### Input
 A CLAUDE.md that says `yarn test` with Jest. Package.json declares `pnpm@9.0.0` with vitest. A `.claude/rules/testing.md` says "Always use pnpm" and "Never use Jest — migrated to vitest in Q1 2024."
+
+Fixture: `fixtures/contradiction/`
 
 ### Output
 
 ```markdown
 # Verdict
 The harness contains direct contradictions. Fix these before any cosmetic cleanup.
+
+Grade: F — actively misleading
 
 ## Contradictions
 | Surface | Conflict | Canonical fix |
@@ -81,6 +82,8 @@ The harness contains direct contradictions. Fix these before any cosmetic cleanu
 
 ### Input
 A project with `backend/pyproject.toml` (Poetry, FastAPI, pytest, ruff, mypy) and `frontend/package.json` (pnpm, React, Vite, vitest, eslint). No CLAUDE.md, no .claude/ directory.
+
+Fixture: `fixtures/empty-bootstrap/`
 
 ### Output
 

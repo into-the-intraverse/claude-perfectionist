@@ -26,7 +26,7 @@
         "type": "object",
         "required": ["severity", "class", "surface", "remediation"],
         "properties": {
-          "severity": { "type": "string", "enum": ["critical", "major", "minor", "info", "insufficient_evidence"] },
+          "severity": { "type": "string", "enum": ["critical", "major", "minor", "info"] },
           "class": { "type": "string" },
           "surface": { "type": "string" },
           "evidence": { "type": "array", "items": { "type": "string" } },

@@ -31,7 +31,9 @@ Diagnose only. Return findings, tradeoffs, and open questions. Do not rewrite fi
 Diagnose and propose the minimum high-leverage changes. Name the target surface for each change. Draft snippets only when they clarify the recommendation.
 
 ### Apply
-Produce concrete rewritten content for the highest-leverage changes. Keep the number of edits small and justified.
+Apply the highest-leverage changes directly with file edits. Keep the edit set small and justified. Summarize what changed afterward.
+
+Apply edits only files inside the repo being audited. User-level and managed files (e.g., `~/.claude/CLAUDE.md`) get proposed snippets, never direct edits.
 
 If the user does not specify a mode, default to `propose`.
 
@@ -46,7 +48,7 @@ Primary target: root `CLAUDE.md`
 In-scope surfaces when present:
 - managed, user, project, ancestor, nested, and imported `CLAUDE.md`
 - legacy `CLAUDE.local.md`
-- `.claude/rules/`, `.claude/commands/`, `.claude/agents/`
+- `.claude/rules/`, `.claude/commands/`, `.claude/agents/`, `.claude/skills/`
 - `.claude/settings.json` and `.claude/settings.local.json`
 - hooks defined in settings
 - `.mcp.json` and repo-local MCP configuration
@@ -153,11 +155,11 @@ A broad audit with many findings is acceptable if findings are strongly prioriti
 ## Findings
 
 Each finding must include:
-- `severity`: `critical | major | minor | info | insufficient_evidence`
+- `severity`: `critical | major | minor | info`
 - `class`: one primary class
 - `surface`: where the problem lives
 - `evidence`: concrete files, configs, commands, or observed behavior
-- `confidence`: how certain you are — verified, likely, or arguable
+- `confidence`: `high` (verified) | `medium` (likely) | `low` (arguable)
 - `remediation`: one of `keep | rewrite | delete | extract | enforce | investigate`
 - `budget_impact`: `saves_always_on | maintainability_only | none | unknown`
 
@@ -165,7 +167,7 @@ Use classes such as: `missing_verification`, `contradiction`, `prose_only_invari
 
 Classification supports action. Use it to route decisions, not as an end in itself.
 
-See `references/finding-model.md` for the full field set, optional tags, and examples.
+See `references/finding-model.md` for optional fields, tags, and worked examples.
 
 ## Severity Rules
 
@@ -179,28 +181,63 @@ Apply severity conservatively. When unsure, lower confidence instead of raising 
 
 **Info**: optional improvements or useful observations.
 
-**Insufficient evidence**: suspicion without enough proof. Use this honestly instead of inflating severity.
+If evidence is insufficient, do not invent a severity for it: state the severity the finding would have if confirmed, set confidence `low`, and use remediation `investigate` (class `insufficient_evidence`).
 
-See `references/scoring.md` for the grade model and confidence gates.
+Confidence gates:
+- low confidence usually caps severity at `minor`
+- medium confidence can reach `major`
+- `critical` normally requires high confidence
+
+## Grades
+
+Use one overall grade for the harness. Always show both the letter and the human meaning: "Grade: C — major cleanup needed", never just "Grade: C".
+
+- `A` — **production-ready** — no critical findings, verification and routing are present, root context is lean enough
+- `B` — **solid, minor issues** — no critical findings, but some major issues remain
+- `C` — **major cleanup needed** — one critical finding or several major issues
+- `D` — **minimal harness, significant gaps** — multiple critical findings or widespread misplacement and drift
+- `F` — **actively misleading** — the harness contradicts itself or cannot be trusted on important workflows
+
+Adjust down one step when any of these hold: important recommendations depend on unread surfaces; canonical commands appear stale or unverified; review-only or path-specific content dominates root memory; the proposal adds complexity without clear gain.
+
+Adjust up one step only when all of these hold: clear verification paths, good routing to narrower surfaces, limited duplication, deterministic enforcement where appropriate.
+
+A new or empty harness gets no grade (`unknown` in the machine report) — grades measure the trustworthiness of a harness that exists.
 
 ## Current Platform Notes
 
-Treat as working assumptions, not eternal truths.
+Last reviewed: 2026-07. Treat as working assumptions, not eternal truths. If a critical or major finding hinges on one of these behaviors, verify it against current official docs before asserting it.
 
 - Claude Code memory files are automatically loaded; ancestor `CLAUDE.md` files are read recursively upward.
 - Imported memory counts as loaded content; imports improve organization but do not remove context cost.
 - Settings and hooks are hierarchical configuration, not just advisory prose.
 - Subagents have their own context windows and tool access.
 - Custom slash commands are conditional task surfaces, not always-on memory.
+- Path- or type-scoped rules load only when matching files are in play; unconditional rules count as always-on memory. Skill descriptions are always-on; skill bodies load only on trigger.
 - `CLAUDE.local.md` is legacy input. Do not recommend it as the default.
 
 ## Workflow
 
 ### Phase 1. Inventory surfaces
-List every relevant surface you can inspect. Mark unread surfaces and do not speculate about them. If root `CLAUDE.md` is absent, inspect the rest of the harness before treating that as a failure.
+List every relevant surface you can inspect. Use this checklist:
+- project memory: root `CLAUDE.md` and nested `CLAUDE.md` files — glob `**/CLAUDE.md`, excluding dependency directories
+- ancestor memory: walk parent directories upward from the repo root
+- user memory: `~/.claude/CLAUDE.md`
+- legacy memory: `CLAUDE.local.md`
+- imports: scan every read memory file for `@path` lines and follow them
+- conditional and isolated surfaces: `.claude/rules/`, `.claude/commands/`, `.claude/agents/`, `.claude/skills/*/SKILL.md`
+- settings and hooks: `.claude/settings.json` and `.claude/settings.local.json` — read the `hooks` and `permissions` keys, not just the file names
+- MCP: `.mcp.json`
+- canonical docs: `README`, `CONTRIBUTING`, `docs/`, ADRs, review-only docs such as `REVIEW.md`
+
+Mark unread surfaces and do not speculate about them. If root `CLAUDE.md` is absent, inspect the rest of the harness before treating that as a failure.
 
 ### Phase 2. Build the assembled context map
-For each surface: always-on, conditional, isolated, or zero-context? Is the knowledge correctly placed? Does it duplicate another source? Estimate always-on cost roughly as a directional signal.
+For each surface: always-on, conditional, isolated, or zero-context? Is the knowledge correctly placed? Does it duplicate another source?
+
+The always-on set is: root `CLAUDE.md` + user and ancestor memory + everything reachable via imports + unconditionally loaded rules. Path- or type-scoped rules, commands, skill bodies, and subagents are conditional or isolated.
+
+Estimate always-on cost in tokens: count characters with native tools (`wc -c`, `(Get-Item file).Length`) and divide by 4. Round the result, label it an estimate, and use it for comparison — not as an exact cost.
 
 ### Phase 3. Classify each important instruction
 For each block worth keeping or changing: `keep`, `rewrite`, `delete`, `extract`, `enforce`, or `investigate`. Name target surfaces and enforcement mechanisms.
@@ -216,13 +253,15 @@ Define a small regression pack. For each task: expected route, expected verifica
 
 ## Output Format
 
-Return both a human-readable report and a machine-readable report. Put the human report first.
+Return a human-readable report. Emit the machine-readable report only when the user requests it (e.g., `--json` or "include the machine report").
 
 ### Human report: default audit
 
 ```
 # Verdict
 [2–4 sentences. Is the harness trustworthy? Where does it fail? What to fix first.]
+
+Grade: [letter] — [human meaning]
 
 ## Top findings
 | Severity | Problem | Why it matters | Action |
@@ -271,6 +310,8 @@ This repo does not yet have a trustworthy instruction harness. The right first s
 # Verdict
 The harness contains direct contradictions. Fix these before any cosmetic cleanup.
 
+Grade: [letter] — [human meaning]
+
 ## Contradictions
 | Surface | Conflict | Canonical fix |
 | --- | --- | --- |
@@ -284,7 +325,7 @@ The harness contains direct contradictions. Fix these before any cosmetic cleanu
 ```
 
 ### Machine report
-Emit JSON matching `references/report-schema.json`. Keep summary and notes short. Prefer omission over fake precision. Use machine labels in the JSON; keep them out of the human prose unless needed.
+Only when requested: emit JSON matching `references/report-schema.json`. Keep summary and notes short. Prefer omission over fake precision. Use machine labels in the JSON; keep them out of the human prose unless needed.
 
 ## Error Modes
 
@@ -301,7 +342,6 @@ Avoid these failures:
 ## References
 
 Consult these files only when needed:
-- `references/finding-model.md` for full finding fields and tags
-- `references/scoring.md` for severity, confidence gates, and overall grade rules
+- `references/finding-model.md` for optional finding fields, tags, and worked examples
 - `references/examples.md` for annotated before/after examples
 - `references/report-schema.json` for the machine-readable output schema

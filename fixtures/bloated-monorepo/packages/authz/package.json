@@ -1,0 +1,10 @@
+{
+  "name": "@acme/authz",
+  "private": true,
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  }
+}

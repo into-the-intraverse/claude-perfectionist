@@ -4,11 +4,12 @@ A Claude Code skill that audits and optimizes instruction harnesses — root `CL
 
 Optimizes for **agent reliability per unit of always-on context**, not for the shortest file.
 
-> ⚠️ If you have `claude-md-management` or another CLAUDE.md-related skill installed, it may intercept queries before the perfectionist gets a chance. Uninstall competing skills or be explicit: *"use the perfectionist to audit my harness."*
+> ⚠️ If you have `claude-md-management` or another CLAUDE.md-related skill installed, it may intercept free-text queries before the perfectionist gets a chance. When in doubt, run `/perfectionist` — it invokes the skill deterministically.
 
 **Try it:**
 - `"My Claude keeps using yarn but we switched to pnpm months ago"` — traces the misbehavior to contradicting instructions across your config surfaces, produces a corrected snippet.
 - `"Audit my CLAUDE.md"` — full harness sweep: finds contradictions, stale commands, context bloat, missing verification, and tells you the 3–5 changes that matter most.
+- `/perfectionist audit` — deterministic invocation with an explicit mode (`audit | propose | apply`, optional `--json`).
 
 ## Quick Start
 
@@ -33,13 +34,6 @@ If you have the [bazaar](https://github.com/into-the-intraverse/bazaar) marketpl
 git clone https://github.com/into-the-intraverse/claude-perfectionist.git
 cp -r claude-perfectionist/skills/claude-perfectionist ~/.claude/skills/claude-perfectionist
 ```
-
-### Claude.ai (web/mobile)
-
-1. Download or clone this repo.
-2. Zip the `skills/claude-perfectionist` folder (the folder itself must be the zip root).
-3. In Claude.ai go to **Customize → Skills → "+" → Upload a skill**.
-4. Upload the zip.
 
 After installing, ask Claude:
 
@@ -71,7 +65,7 @@ It produces a verdict-first report with:
 - **Recommended changes** — specific, actionable, max 7
 - **Open questions** — only blocker-level
 - **Appendix** — harness map, validation plan, evidence (only when needed)
-- **Machine-readable JSON report**
+- **Machine-readable JSON report** — on request (`--json` or ask for it)
 
 The report adapts its template to the scenario: default audit, new/empty harness bootstrap, or contradiction debug.
 
@@ -81,7 +75,7 @@ The report adapts its template to the scenario: default audit, new/empty harness
 |---|---|---|
 | `audit` | Diagnose only. No file changes. | First pass, understanding the current state |
 | `propose` | Diagnose + draft minimum high-leverage changes. | Default. Most common use. |
-| `apply` | Produce concrete rewritten files. | When you're ready to commit changes |
+| `apply` | Diagnose + edit files directly (repo files only; user-level configs get snippets, never edits). | When you're ready to commit changes |
 
 Ask Claude to use a specific mode:
 
@@ -97,6 +91,8 @@ Apply the top changes to my harness
 
 If you don't specify, the perfectionist defaults to **propose**.
 
+Or use the slash command with an explicit mode: `/perfectionist audit`, `/perfectionist apply --json`.
+
 ## Core Philosophy
 
 1. **Evidence over opinion** — findings are grounded in repo files, not abstract best practices.
@@ -111,17 +107,22 @@ If you don't specify, the perfectionist defaults to **propose**.
 ```
 .claude-plugin/
 └── plugin.json                       # Plugin metadata
+commands/
+└── perfectionist.md                  # /perfectionist slash command
 skills/
 └── claude-perfectionist/
-    ├── SKILL.md                      # Core skill (~307 lines)
+    ├── SKILL.md                      # Core skill (control plane, under 500 lines)
     └── references/
-        ├── finding-model.md          # Full finding fields, tags, examples
-        ├── scoring.md                # Grade model (A–F with human meanings), confidence gates
+        ├── finding-model.md          # Optional finding fields, tags, worked examples
         ├── examples.md               # Annotated before/after examples
         └── report-schema.json        # Machine-readable output schema
+fixtures/                             # Fake harnesses for testing the skill
+├── bloated-monorepo/
+├── contradiction/
+└── empty-bootstrap/
 ```
 
-`SKILL.md` is the control plane — compact core logic under 500 lines.
+`SKILL.md` is the control plane — compact core logic under 500 lines (hook-enforced: warning at 450 lines, block at 500).
 `references/` files load on demand only when the perfectionist needs detailed schemas or examples.
 
 ## Example Output
@@ -191,15 +192,15 @@ that routing still works and nothing got lost.
 
 ## Requirements
 
-- Claude Code with skills support, or Claude.ai with code execution enabled.
+- Claude Code with skills support.
 - No external dependencies. The skill is pure markdown + JSON schema.
 
 ## Contributing
 
 Issues and PRs welcome. The skill follows its own philosophy:
 - Changes should be grounded in evidence (real failure modes, not theoretical improvements).
-- Keep `SKILL.md` under 500 lines. Push detail to `references/`.
-- Test changes against real-world `CLAUDE.md` files before merging.
+- Keep `SKILL.md` under 500 lines. Push detail to `references/`. A PostToolUse hook warns at 450 lines and blocks at 500.
+- Test changes by running the skill against each directory under `fixtures/`; findings should match the corresponding example in `references/examples.md`.
 
 ## License
 

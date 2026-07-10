@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: postgres:16
+  redis:
+    image: redis:7
+  opensearch:
+    image: opensearchproject/opensearch:2
+  mailhog:
+    image: mailhog/mailhog

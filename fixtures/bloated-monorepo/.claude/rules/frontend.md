@@ -1,0 +1,2 @@
+# Frontend
+Use functional components.

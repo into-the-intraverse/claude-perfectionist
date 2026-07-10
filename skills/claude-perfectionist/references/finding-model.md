@@ -1,51 +1,18 @@
 # Finding Model
 
-Use a small core finding in the main report.
-Use this file only when more structure materially improves consistency.
-
-## Core fields
-
-Required in most cases:
-- `severity`: `critical | major | minor | info | insufficient_evidence`
-- `class`: one primary class
-- `surface`: where the problem lives
-- `evidence`: concrete files, configs, commands, or observed behavior
-- `remediation`: one of `keep | rewrite | delete | extract | enforce | investigate`
-- `budget_impact`: `saves_always_on | maintainability_only | none | unknown`
+Additive detail for the core finding defined in `SKILL.md` — required fields, classes,
+severity, confidence gates, and grades all live there. This file only adds what `SKILL.md`
+does not: optional fields, routing tags, edge-case rules, and worked examples.
 
 ## Optional fields
 
 Use only when useful:
-- `confidence`: `high | medium | low`
 - `target_surface`: destination when `extract` is chosen
 - `enforcement_mechanism`: hook, setting, permission, CI, linter, schema
 - `secondary_tags`: short routing tags such as `review_only`, `path_scoped`, `version_sensitive`, `shared_policy`, `legacy_surface`
 - `notes`: brief nuance or caveat
 
-## Recommended primary classes
-
-- `missing_verification`
-- `contradiction`
-- `prose_only_invariant`
-- `always_on_bloat`
-- `misplaced_scoped_knowledge`
-- `review_only_misplacement`
-- `missing_routing`
-- `stale_or_unverified_command`
-- `external_only_source_of_truth`
-- `generic_low_signal_instruction`
-- `overlapping_skill_or_command`
-- `naive_planning_trigger`
-- `insufficient_evidence`
-
-## Confidence guidance
-
-Distinguish clearly between:
-- **high (verified defect)**: direct repo evidence confirms the problem
-- **medium (likely issue)**: strong indirect evidence, but not fully proven
-- **low (arguable / not fully verified)**: plausible suspicion, incomplete evidence — flag it, do not assert as fact
-
-When unsure, lower confidence instead of raising severity.
+## Low-confidence exceptions
 
 Low-confidence findings should rarely be `critical`. Exceptions:
 - direct contradictions in inspected active surfaces
