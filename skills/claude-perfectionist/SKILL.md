@@ -1,6 +1,7 @@
 ---
 name: claude-perfectionist
 description: Activate when the user wants to edit, trim, audit, reorganize, or debug CLAUDE.md or any Claude Code config file. This covers: bloated or messy CLAUDE.md files; Claude running wrong commands or using the wrong package manager due to bad instructions; conflicting rules between CLAUDE.md and .claude/rules; broken subagent references; instruction harness audits across rules, hooks, settings, and MCP config; extracting review checklists or scoped content out of the root claude file; and creating or fixing pre-commit hooks or other Claude Code hooks. Trigger whenever the user's problem traces back to how Claude is configured or instructed — even if they say "claude file" instead of "CLAUDE.md". Skip general coding, non-config docs, test failures, CI pipelines, and conceptual questions about Claude.
+disable-model-invocation: true
 ---
 
 # Claude Perfectionist
